@@ -20,12 +20,10 @@ class ServerWindow(Tk):
         self.IP_ADDR = gethostbyname(gethostname())
         self.BUFSIZE = 2048
         self.server = socket(AF_INET,SOCK_STREAM)
-        self.running_server = True
         self.title('Chat')
         self.geometry('400x400')
         self.resizable(width=False,height=False)
         self.iconbitmap('media/chat_icon.ico')
-        self.protocol('WM_DELETE_WINDOW')
         self.init_window()
 
 
@@ -41,7 +39,7 @@ class ServerWindow(Tk):
 
     def accept_connection(self):
 
-        while self.running_server:
+        while True:
             client,client_ip_address = self.server.accept()
             self.logs.insert(END,'{} joined chat!'.format(client_ip_address))
             client.send(bytes('Welcome to chat!','utf-8'))
