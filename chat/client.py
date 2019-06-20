@@ -1,9 +1,9 @@
 from tkinter import *
 from tkinter import messagebox
-from socket import AF_INET,socket,SOCK_STREAM,gethostbyname,gethostname
+from socket import AF_INET,socket,SOCK_STREAM,gethostbyname,gethostname,SHUT_RDWR
 from threading import Thread
-import winsound
 import re
+import sys
 
 CLASSIC_FONT = ("Arial", "10",'bold')
 
@@ -15,10 +15,12 @@ class ClientFrame(Tk):
         self.PORT = None
         self.username = ''
         self.BUFFER_SIZE = 2048
+        self.is_receive_message = True
         self.client_side = socket(AF_INET,SOCK_STREAM)
         self.geometry('400x400')
         self.resizable(width=False, height=False)
         self.title('Client')
+        self.protocol('WM_DELETE_WINDOW',self.close_connection)
         self.iconbitmap('media/chat_icon.ico')
 
         self.init_first_frame()
@@ -56,9 +58,8 @@ class ClientFrame(Tk):
         self.send_button = Button(self.second_frame,text='Send',width=9,height=1,bg='#5b92ea')
         self.send_button.place(x=305,y=360)
         self.send_button.bind('<Button-1>',self.send_message)
-        self.close_connection_button = Button(self.second_frame,text=u'\u2715',bg='#d13e43')
+        self.close_connection_button = Button(self.second_frame,text=u'\u2715',bg='#d13e43',command=self.close_connection)
         self.close_connection_button.place(x=15,y=360)
-        self.close_connection_button.bind('<Button-1>',self.close_connection)
 
 
     def connect_to_server(self,event):
@@ -77,12 +78,11 @@ class ClientFrame(Tk):
             messagebox.showerror('Error','Error occurred while connecting to server!')
 
     def receive_message(self):
-        while True:
+        while self.is_receive_message:
             try:
                 message = self.client_side.recv(self.BUFFER_SIZE).decode('utf8')
 
                 self.message_list.insert(END,str(message))
-                winsound.PlaySound('receive',winsound.SND_FILENAME)
             except OSError as e:
                 pass
 
@@ -91,10 +91,15 @@ class ClientFrame(Tk):
         self.client_side.send(bytes(message, 'utf8'))
         self.enter_field.delete(0,END)
 
-    def close_connection(self,event):
-        self.client_side.close()
-        self.destroy()
-        self.quit()
+    def close_connection(self):
+        try:
+            self.is_receive_message = False
+            self.client_side.close()
+            self.destroy()
+            # self.quit()
+
+        except OSError:
+            exit()
 
     def check_input(self):
         try:
@@ -102,16 +107,25 @@ class ClientFrame(Tk):
             self.PORT = int(self.port_field.get())
             self.username = self.name_filed.get()
 
-            valid_ip = re.findall('[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+', self.IP_ADDR)
+            numbers = self.IP_ADDR.split('.')
 
-            if not valid_ip or not self.PORT:
+            if len(numbers) < 4:
+                return False
+
+            for num in numbers:
+                if int(num) > 255:
+                    return False
+
+            if not self.PORT or not self.username:
                return False
             else:
                 return True
         except ValueError:
             return False
 
+
 client = ClientFrame()
 thread = Thread(target=client.receive_message)
 thread.start()
 client.mainloop()
+thread.join()
