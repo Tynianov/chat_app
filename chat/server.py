@@ -1,5 +1,4 @@
 from tkinter import *
-from tkinter import messagebox
 from socket import AF_INET,socket,SOCK_STREAM,gethostbyname,gethostname
 from threading import Thread
 import select
@@ -15,6 +14,7 @@ class ServerWindow(Tk):
         Tk.__init__(self)
         self.addresses = {}
         self.clients = {}
+        self.threads = {}
         self.PORT = 1234
         self.IP_ADDR = gethostbyname(gethostname())
         self.BUFSIZE = 2048
@@ -46,10 +46,12 @@ class ServerWindow(Tk):
                 self.logs.insert(END,'{} joined chat!'.format(client_ip_address))
                 client.send(bytes('Welcome to chat!','utf-8'))
                 self.addresses[client] = client_ip_address
-                Thread(target=self.handle_client_connection, args=(client,)).start()
+                new_user_thread =  Thread(target=self.handle_client_connection, args=(client,))
+                new_user_thread.start()
+                self.threads[client] = new_user_thread
 
             except OSError:
-                pass
+                exit(1)
 
     def handle_client_connection(self,client):
 
@@ -67,6 +69,7 @@ class ServerWindow(Tk):
             except ConnectionError:
                 self.logs.insert(END, '{} has left the chat'.format(self.addresses[client]))
                 del self.clients[client]
+                del self.threads[client]
                 self.send_message(bytes('{} has left the chat'.format(name), 'utf8'))
                 break
 
@@ -77,9 +80,16 @@ class ServerWindow(Tk):
             client.send(bytes(name, "utf8") + message)
 
     def quit_server(self):
+
         self.accepting_connection = False
+        for client in self.clients:
+            client.close()
+            client.is_receive_message = False
+            self.threads[client].join()
+
         self.server.close()
         self.destroy()
+
 
 if __name__ == '__main__':
     server = ServerWindow()

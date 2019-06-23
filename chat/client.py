@@ -16,6 +16,7 @@ class ClientFrame(Tk):
         self.username = ''
         self.BUFFER_SIZE = 2048
         self.is_receive_message = True
+        self.client_thread = None
         self.client_side = socket(AF_INET,SOCK_STREAM)
         self.geometry('400x400')
         self.resizable(width=False, height=False)
@@ -71,6 +72,8 @@ class ClientFrame(Tk):
                 self.client_side.send(bytes(self.username,'utf8'))
                 self.second_frame.grid(row=0, column=0)
                 self.first_frame.grid_forget()
+                self.client_thread = Thread(target=self.receive_message)
+                self.client_thread.start()
             else:
                 messagebox.showwarning('Wrong input', 'Enter valid data')
 
@@ -83,7 +86,10 @@ class ClientFrame(Tk):
                 message = self.client_side.recv(self.BUFFER_SIZE).decode('utf8')
 
                 self.message_list.insert(END,str(message))
-            except OSError as e:
+
+            except SystemExit:
+                self.close_connection()
+            except OSError:
                 pass
 
     def send_message(self,event):
@@ -92,14 +98,14 @@ class ClientFrame(Tk):
         self.enter_field.delete(0,END)
 
     def close_connection(self):
-        try:
+        # try:
             self.is_receive_message = False
             self.client_side.close()
             self.destroy()
             # self.quit()
 
-        except OSError:
-            exit()
+        # except OSError:
+        #     exit()
 
     def check_input(self):
         try:
@@ -125,7 +131,8 @@ class ClientFrame(Tk):
 
 
 client = ClientFrame()
-thread = Thread(target=client.receive_message)
-thread.start()
+# thread = Thread(target=client.receive_message)
+# thread.start()
 client.mainloop()
-thread.join()
+client.client_thread.join()
+# thread.join()
