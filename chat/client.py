@@ -22,7 +22,7 @@ class ClientFrame(Tk):
         self.resizable(width=False, height=False)
         self.title('Client')
         self.protocol('WM_DELETE_WINDOW',self.close_connection)
-        self.iconbitmap('media/chat_icon.ico')
+        #self.iconbitmap('media/chat_icon.ico')
 
         self.init_first_frame()
 
@@ -64,21 +64,21 @@ class ClientFrame(Tk):
 
 
     def connect_to_server(self,event):
-        try:
+    	try:
+    		if self.check_input():
+    			self.init_second_frame()
+    			self.client_side.connect((self.IP_ADDR,self.PORT))
+    			self.client_side.send(bytes(self.username,'utf8'))
+    			self.second_frame.grid(row=0, column=0)
+    			self.first_frame.grid_forget()
+    			self.client_thread = Thread(target=self.receive_message)
+    			self.client_thread.daemon=True
+    			self.client_thread.start()
+    		else:
+    			messagebox.showwarning('Wrong input', 'Enter valid data')
 
-            if self.check_input():
-                self.init_second_frame()
-                self.client_side.connect((self.IP_ADDR,self.PORT))
-                self.client_side.send(bytes(self.username,'utf8'))
-                self.second_frame.grid(row=0, column=0)
-                self.first_frame.grid_forget()
-                self.client_thread = Thread(target=self.receive_message)
-                self.client_thread.start()
-            else:
-                messagebox.showwarning('Wrong input', 'Enter valid data')
-
-        except OSError:
-            messagebox.showerror('Error','Error occurred while connecting to server!')
+    	except OSError:
+    		messagebox.showerror('Error','Error occurred while connecting to server!')
 
     def receive_message(self):
         while self.is_receive_message:
@@ -98,14 +98,10 @@ class ClientFrame(Tk):
         self.enter_field.delete(0,END)
 
     def close_connection(self):
-        # try:
             self.is_receive_message = False
             self.client_side.close()
-            self.destroy()
-            # self.quit()
+            self.destroy()   
 
-        # except OSError:
-        #     exit()
 
     def check_input(self):
         try:
@@ -131,8 +127,5 @@ class ClientFrame(Tk):
 
 
 client = ClientFrame()
-# thread = Thread(target=client.receive_message)
-# thread.start()
 client.mainloop()
-client.client_thread.join()
-# thread.join()
+

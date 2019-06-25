@@ -23,7 +23,7 @@ class ServerWindow(Tk):
         self.accepting_connection = True
         self.geometry('400x400')
         self.resizable(width=False,height=False)
-        self.iconbitmap('media/chat_icon.ico')
+        # self.iconbitmap('media/chat_icon.ico')
         self.protocol('WM_DELETE_WINDOW',self.quit_server)
         self.init_window()
 
@@ -46,12 +46,14 @@ class ServerWindow(Tk):
                 self.logs.insert(END,'{} joined chat!'.format(client_ip_address))
                 client.send(bytes('Welcome to chat!','utf-8'))
                 self.addresses[client] = client_ip_address
-                new_user_thread =  Thread(target=self.handle_client_connection, args=(client,))
+                new_user_thread =  Thread(target=self.handle_client_connection, args=(client,),daemon=True)
                 new_user_thread.start()
-                self.threads[client] = new_user_thread
+
+            except SystemExit:
+                self.quit_server()
 
             except OSError:
-                exit(1)
+               self.quit_server()
 
     def handle_client_connection(self,client):
 
@@ -69,7 +71,6 @@ class ServerWindow(Tk):
             except ConnectionError:
                 self.logs.insert(END, '{} has left the chat'.format(self.addresses[client]))
                 del self.clients[client]
-                del self.threads[client]
                 self.send_message(bytes('{} has left the chat'.format(name), 'utf8'))
                 break
 
@@ -84,8 +85,6 @@ class ServerWindow(Tk):
         self.accepting_connection = False
         for client in self.clients:
             client.close()
-            client.is_receive_message = False
-            self.threads[client].join()
 
         self.server.close()
         self.destroy()
@@ -95,8 +94,7 @@ if __name__ == '__main__':
     server = ServerWindow()
     server.server.bind((server.IP_ADDR,server.PORT))
     server.server.listen()
-    thread = Thread(target=server.accept_connection)
+    thread = Thread(target=server.accept_connection,daemon=True)
     thread.start()
     server.mainloop()
-    thread.join()
     server.server.close()
