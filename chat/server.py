@@ -14,11 +14,13 @@ class ServerWindow(Tk):
         Tk.__init__(self)
         self.addresses = {}
         self.clients = {}
-        self.threads = {}
         self.PORT = 1234
         self.IP_ADDR = gethostbyname(gethostname())
         self.BUFSIZE = 2048
         self.server = socket(AF_INET,SOCK_STREAM)
+        self.server.bind((self.IP_ADDR, self.PORT))
+        self.server.listen()
+        # self.thread = Thread(target=self.accept_connection, daemon=True)
         self.title('Chat')
         self.accepting_connection = True
         self.geometry('400x400')
@@ -39,6 +41,7 @@ class ServerWindow(Tk):
 
 
     def accept_connection(self):
+        # self.thread.start()
 
         while self.accepting_connection:
             try:
@@ -91,10 +94,9 @@ class ServerWindow(Tk):
 
 
 if __name__ == '__main__':
-    server = ServerWindow()
-    server.server.bind((server.IP_ADDR,server.PORT))
-    server.server.listen()
-    thread = Thread(target=server.accept_connection,daemon=True)
+    server_side = ServerWindow()
+
+    thread = Thread(target=server_side.accept_connection,daemon=True)
     thread.start()
-    server.mainloop()
-    server.server.close()
+    server_side.mainloop()
+    server_side.server.close()
