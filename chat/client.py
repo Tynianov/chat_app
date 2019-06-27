@@ -22,8 +22,7 @@ class ClientFrame(Tk):
         self.resizable(width=False, height=False)
         self.title('Client')
         self.protocol('WM_DELETE_WINDOW',self.close_connection)
-        #self.iconbitmap('media/chat_icon.ico')
-
+     
         self.init_first_frame()
 
     def init_first_frame(self):

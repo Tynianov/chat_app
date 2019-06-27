@@ -20,12 +20,10 @@ class ServerWindow(Tk):
         self.server = socket(AF_INET,SOCK_STREAM)
         self.server.bind((self.IP_ADDR, self.PORT))
         self.server.listen()
-        # self.thread = Thread(target=self.accept_connection, daemon=True)
         self.title('Chat')
         self.accepting_connection = True
         self.geometry('400x400')
         self.resizable(width=False,height=False)
-        # self.iconbitmap('media/chat_icon.ico')
         self.protocol('WM_DELETE_WINDOW',self.quit_server)
         self.init_window()
 
@@ -41,7 +39,6 @@ class ServerWindow(Tk):
 
 
     def accept_connection(self):
-        # self.thread.start()
 
         while self.accepting_connection:
             try:
